@@ -1,0 +1,11 @@
+{
+    "mcpServers": {
+        "kali_mcp": {
+            "command": "/bin/bash",
+            "args": [
+                "-c",
+                "/home/kaliuser/start-mcp-server.sh"
+            ]
+        }
+    }
+}
