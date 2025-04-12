@@ -8,7 +8,7 @@ import subprocess
 import sys
 import threading
 import traceback
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 from mcp.server.fastmcp import FastMCP
 
@@ -162,6 +162,154 @@ def setup_mcp_server() -> FastMCP:
             }
         
         result = CommandExecutor(command).execute()
+        return result
+
+    @mcp.tool()
+    def curl_request(
+        url: str, 
+        method: str = "GET", 
+        headers: Dict[str, str] = {}, 
+        data: str = "", 
+        output_file: str = "", 
+        follow_redirects: bool = True, 
+        timeout: int = 30,
+        additional_args: str = ""
+    ) -> Dict[str, Any]:
+        """
+        Execute a curl request with various options.
+        
+        Args:
+            url: The URL to request
+            method: HTTP method (GET, POST, PUT, DELETE, etc.)
+            headers: Dictionary of HTTP headers
+            data: Data to send with the request
+            output_file: File path to save the response to
+            follow_redirects: Whether to follow HTTP redirects
+            timeout: Request timeout in seconds
+            additional_args: Additional curl arguments
+            
+        Returns:
+            Request results
+        """
+        if not url:
+            return {
+                "error": "URL parameter is required",
+                "success": False
+            }
+        
+        # Validate method
+        method = method.upper()
+        if method not in ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "PATCH"]:
+            return {
+                "error": f"Invalid method: {method}",
+                "success": False
+            }
+        
+        # Build the command
+        command = ["curl", "-s"]  # Silent mode
+        
+        # Add method if not GET
+        if method != "GET":
+            command.append(f"-X {method}")
+        
+        # Add headers
+        for header_name, header_value in headers.items():
+            command.append(f"-H '{header_name}: {header_value}'")
+        
+        # Add data if provided
+        if data:
+            if method == "GET":
+                # Force POST method if data is provided with GET
+                command.append("-X POST")
+            command.append(f"-d '{data}'")
+        
+        # Add output file if provided
+        if output_file:
+            command.append(f"-o {output_file}")
+        
+        # Add follow redirects if enabled
+        if follow_redirects:
+            command.append("-L")
+        
+        # Add timeout
+        command.append(f"--connect-timeout {timeout}")
+        
+        # Add additional arguments
+        if additional_args:
+            command.extend(additional_args.split())
+        
+        # Add verbose output for better debugging
+        command.append("-v")
+        
+        # Add the URL
+        command.append(f"'{url}'")
+        
+        # Join the command parts
+        command_str = " ".join(command)
+        
+        # Execute the command
+        result = CommandExecutor(command_str).execute()
+        
+        # Parse the output and structure it nicely
+        result["request_url"] = url
+        result["request_method"] = method
+        
+        return result
+
+    @mcp.tool()
+    def kali_command(
+        tool: str,
+        target: str = "",
+        options: List[str] = [],
+        output_file: str = "",
+        timeout: int = COMMAND_TIMEOUT
+    ) -> Dict[str, Any]:
+        """
+        Execute a Kali Linux tool with flexible options.
+        
+        Args:
+            tool: The Kali tool to run (e.g., dirb, nmap, nikto)
+            target: The target IP, URL, or hostname
+            options: List of command line options to pass to the tool
+            output_file: File to save output to (if supported by the tool)
+            timeout: Command timeout in seconds
+            
+        Returns:
+            Tool execution results
+        """
+        if not tool:
+            return {
+                "error": "Tool parameter is required",
+                "success": False
+            }
+        
+        # Build the command
+        command = [tool]
+        
+        # Add options
+        if options:
+            command.extend(options)
+        
+        # Add target if provided
+        if target:
+            command.append(target)
+        
+        # Add output file if provided
+        if output_file:
+            # Different tools handle output files differently, so we'll try to be generic
+            command.append(f"-o {output_file}")
+        
+        # Join the command parts
+        command_str = " ".join(command)
+        
+        # Execute the command with specified timeout
+        result = CommandExecutor(command_str, timeout=timeout).execute()
+        
+        # Add metadata to the result
+        result["tool"] = tool
+        result["target"] = target
+        result["options"] = options
+        
         return result
 
     @mcp.tool()
@@ -500,6 +648,26 @@ def setup_mcp_server() -> FastMCP:
         return CommandExecutor(command).execute()
 
     @mcp.tool()
+    def run_kali_command(command: str, timeout: int = COMMAND_TIMEOUT) -> Dict[str, Any]:
+        """
+        Run any arbitrary command on the Kali Linux command line interface.
+        
+        Args:
+            command: The full command string to execute
+            timeout: Maximum execution time in seconds
+            
+        Returns:
+            Command execution results including stdout, stderr, return code, and success status
+        """
+        if not command:
+            return {
+                "error": "Command parameter is required",
+                "success": False
+            }
+        
+        return CommandExecutor(command, timeout=timeout).execute()
+        
+    @mcp.tool()
     def check_health() -> Dict[str, Any]:
         """
         Check the health status of the system and available tools.
@@ -508,7 +676,7 @@ def setup_mcp_server() -> FastMCP:
             Server health information
         """
         # Check if essential tools are installed
-        essential_tools = ["nmap", "gobuster", "dirb", "nikto", "sqlmap", "hydra", "john", "wpscan", "enum4linux"]
+        essential_tools = ["nmap", "gobuster", "dirb", "nikto", "sqlmap", "hydra", "john", "wpscan", "enum4linux", "curl"]
         tools_status = {}
         
         for tool in essential_tools:
