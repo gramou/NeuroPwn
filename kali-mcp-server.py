@@ -12,12 +12,14 @@ from typing import Dict, Any, Optional, List
 
 from mcp.server.fastmcp import FastMCP
 
+LOG_FILE = os.environ.get("LOG_FILE", "/home/kaliuser/kali-mcp.log")
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.StreamHandler(sys.stdout)
+        logging.FileHandler(LOG_FILE)
     ]
 )
 logger = logging.getLogger(__name__)
