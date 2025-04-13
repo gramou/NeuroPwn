@@ -145,21 +145,23 @@ RUN echo '#!/bin/bash\nset -e\n\n# Kill any existing VNC sessions\nsu - kaliuser
 
 RUN apt-get update && apt-get install -y python3-venv vim
 
-COPY kali-mcp-server.py /home/kaliuser
-COPY start-mcp-server.sh /home/kaliuser
+COPY python/kali-mcp-server.py /home/kaliuser
+COPY script/start-mcp-server.sh /home/kaliuser
 
 RUN chown kaliuser:kaliuser /home/kaliuser/kali-mcp-server.py
 RUN chmod +x /home/kaliuser/start-mcp-server.sh && chown kaliuser:kaliuser /home/kaliuser/start-mcp-server.sh
 
-COPY setup-mcp-server.sh /home/kaliuser
+COPY script/setup-mcp-server.sh /home/kaliuser
 RUN chmod +x /home/kaliuser/setup-mcp-server.sh && chown kaliuser:kaliuser /home/kaliuser/setup-mcp-server.sh
 
-COPY test-client.py /home/kaliuser
+COPY python/test-client.py /home/kaliuser
 RUN chmod +x /home/kaliuser/test-client.py && chown kaliuser:kaliuser home/kaliuser/test-client.py
 
 # Set the working directory
 WORKDIR /home/kaliuser
 USER kaliuser
+RUN mkdir -p /home/kaliuser/.config/Claude
+COPY config/claude_desktop_config.json /home/kaliuser/.config/Claude
 RUN /home/kaliuser/setup-mcp-server.sh
 USER root
 
