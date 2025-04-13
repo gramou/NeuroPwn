@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  kali-web-vnc:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "6080:6080"
+
+  marathon-vuln-webapp:
+    build:
+      context: ./demo
+      dockerfile: Dockerfile
