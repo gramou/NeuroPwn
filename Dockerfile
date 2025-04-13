@@ -46,6 +46,7 @@ RUN apt-get update && \
     imagemagick \
     nodejs \
     npm \
+    xfce4-notifyd \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -155,7 +156,7 @@ COPY script/setup-mcp-server.sh /home/kaliuser
 RUN chmod +x /home/kaliuser/setup-mcp-server.sh && chown kaliuser:kaliuser /home/kaliuser/setup-mcp-server.sh
 
 COPY python/test-client.py /home/kaliuser
-RUN chmod +x /home/kaliuser/test-client.py && chown kaliuser:kaliuser home/kaliuser/test-client.py
+RUN chmod +x /home/kaliuser/test-client.py && chown kaliuser:kaliuser /home/kaliuser/test-client.py
 
 # Set the working directory
 WORKDIR /home/kaliuser
